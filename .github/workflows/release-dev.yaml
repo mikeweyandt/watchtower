@@ -1,4 +1,4 @@
-name: Push to main
+name: Push to develop
 
 on:
   workflow_dispatch: {}
