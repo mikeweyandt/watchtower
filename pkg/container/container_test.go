@@ -115,7 +115,7 @@ var _ = Describe("the container", func() {
 					StartPeriod: 30,
 					Retries:     10,
 				}))
-				Expect(c.GetCreateConfig().Healthcheck).To(Equal(dc.HealthConfig{
+				Expect(c.GetCreateConfig().Healthcheck).To(Equal(&dc.HealthConfig{
 					Test:        []string{"/usr/bin/sleep", "1s"},
 					Interval:    30,
 					Timeout:     30,
@@ -145,7 +145,7 @@ var _ = Describe("the container", func() {
 					StartPeriod: 10,
 					Retries:     2,
 				}))
-				Expect(c.GetCreateConfig().Healthcheck).To(Equal(dc.HealthConfig{
+				Expect(c.GetCreateConfig().Healthcheck).To(Equal(&dc.HealthConfig{
 					Test:        []string{"/usr/bin/sleep", "1s"},
 					Interval:    30,
 					Timeout:     30,
