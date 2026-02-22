@@ -3,10 +3,10 @@ package registry
 import (
 	"context"
 
-	"github.com/containrrr/watchtower/pkg/registry/helpers"
-	watchtowerTypes "github.com/containrrr/watchtower/pkg/types"
 	ref "github.com/distribution/reference"
 	"github.com/docker/docker/api/types/image"
+	"github.com/mikeweyandt/watchtower/pkg/registry/helpers"
+	watchtowerTypes "github.com/mikeweyandt/watchtower/pkg/types"
 	log "github.com/sirupsen/logrus"
 )
 

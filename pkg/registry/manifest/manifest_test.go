@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/containrrr/watchtower/internal/actions/mocks"
-	"github.com/containrrr/watchtower/pkg/registry/manifest"
 	dockerImage "github.com/docker/docker/api/types/image"
+	"github.com/mikeweyandt/watchtower/internal/actions/mocks"
+	"github.com/mikeweyandt/watchtower/pkg/registry/manifest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -6,10 +6,10 @@ import (
 	dockerContainer "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 
-	"github.com/containrrr/watchtower/internal/util"
-	"github.com/containrrr/watchtower/pkg/container/mocks"
-	"github.com/containrrr/watchtower/pkg/filters"
-	t "github.com/containrrr/watchtower/pkg/types"
+	"github.com/mikeweyandt/watchtower/internal/util"
+	"github.com/mikeweyandt/watchtower/pkg/container/mocks"
+	"github.com/mikeweyandt/watchtower/pkg/filters"
+	t "github.com/mikeweyandt/watchtower/pkg/types"
 
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/backend"

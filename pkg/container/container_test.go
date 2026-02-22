@@ -1,9 +1,9 @@
 package container
 
 import (
-	"github.com/containrrr/watchtower/pkg/types"
 	dc "github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
+	"github.com/mikeweyandt/watchtower/pkg/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -16,9 +16,9 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	cerrdefs "github.com/containerd/errdefs"
-	"github.com/containrrr/watchtower/pkg/registry"
-	"github.com/containrrr/watchtower/pkg/registry/digest"
-	t "github.com/containrrr/watchtower/pkg/types"
+	"github.com/mikeweyandt/watchtower/pkg/registry"
+	"github.com/mikeweyandt/watchtower/pkg/registry/digest"
+	t "github.com/mikeweyandt/watchtower/pkg/types"
 )
 
 const defaultStopSignal = "SIGTERM"

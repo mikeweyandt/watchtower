@@ -5,10 +5,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/containrrr/watchtower/pkg/container"
-	"github.com/containrrr/watchtower/pkg/filters"
-	"github.com/containrrr/watchtower/pkg/sorter"
-	"github.com/containrrr/watchtower/pkg/types"
+	"github.com/mikeweyandt/watchtower/pkg/container"
+	"github.com/mikeweyandt/watchtower/pkg/filters"
+	"github.com/mikeweyandt/watchtower/pkg/sorter"
+	"github.com/mikeweyandt/watchtower/pkg/types"
 
 	log "github.com/sirupsen/logrus"
 )
