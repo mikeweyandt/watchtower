@@ -4,6 +4,7 @@ import (
 	dockerContainer "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/go-connections/nat"
+	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
 )
 
 type MockContainerUpdate func(dockerContainer.InspectResponse, image.InspectResponse)
@@ -21,7 +22,8 @@ func MockContainer(updates ...MockContainerUpdate) *Container {
 		},
 	}
 	image := image.InspectResponse{
-		ID: "image_id",
+		ID:     "image_id",
+		Config: &dockerspec.DockerOCIImageConfig{},
 	}
 
 	for _, update := range updates {
