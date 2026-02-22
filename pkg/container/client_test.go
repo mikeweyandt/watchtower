@@ -12,7 +12,6 @@ import (
 	t "github.com/containrrr/watchtower/pkg/types"
 
 	cerrdefs "github.com/containerd/errdefs"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
 	cli "github.com/docker/docker/client"
 	"github.com/onsi/gomega/gbytes"
@@ -96,7 +95,7 @@ var _ = Describe("the client", func() {
 		})
 		When("the container does not exist after stopping", func() {
 			It("should not cause an error", func() {
-				container := MockContainer(WithContainerState(types.ContainerState{Running: true}))
+				container := MockContainer(WithContainerState(dockerContainer.State{Running: true}))
 
 				cid := container.ContainerInfo().ID
 				mockServer.AppendHandlers(

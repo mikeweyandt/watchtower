@@ -8,7 +8,6 @@ import (
 
 	"github.com/containrrr/watchtower/pkg/container"
 	wt "github.com/containrrr/watchtower/pkg/types"
-	"github.com/docker/docker/api/types"
 	dockerContainer "github.com/docker/docker/api/types/container"
 	dockerImage "github.com/docker/docker/api/types/image"
 	"github.com/docker/go-connections/nat"
@@ -121,7 +120,7 @@ func CreateContainerForProgress(index int, idPrefix int, nameFormat string) (wt.
 }
 
 // CreateMockContainerWithLinks should only be used for testing
-func CreateMockContainerWithLinks(id string, name string, image string, created time.Time, links []string, imageInfo *types.ImageInspect) wt.Container {
+func CreateMockContainerWithLinks(id string, name string, image string, created time.Time, links []string, imageInfo *dockerImage.InspectResponse) wt.Container {
 	content := dockerContainer.InspectResponse{
 		ContainerJSONBase: &dockerContainer.ContainerJSONBase{
 			ID:      id,
