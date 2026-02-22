@@ -1,0 +1,10 @@
+{
+    "name": "Go Dev Container",
+    "image": "mcr.microsoft.com/vscode/devcontainers/go:latest",
+    "customizations": {
+    "vscode": {
+        "settings": {},
+        "extensions": ["golang.go"]
+        }
+    }
+}
