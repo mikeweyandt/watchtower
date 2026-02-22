@@ -75,8 +75,8 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc #v2
         with:
-          username: ${{ secrets.BOT_USERNAME }}
-          password: ${{ secrets.BOT_GHCR_PAT }}
+          username: ${{ secrets.WATCHTOWER_USERNAME }}
+          password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
       - name: Build
         uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8 #v3
@@ -93,36 +93,36 @@ jobs:
         run: |
           export DH_TAG=$(git tag --points-at HEAD | sed 's/^v*//')
           docker manifest create \
-            containrrr/watchtower:$DH_TAG \
-            containrrr/watchtower:amd64-$DH_TAG \
-            containrrr/watchtower:i386-$DH_TAG \
-            containrrr/watchtower:armhf-$DH_TAG \
-            containrrr/watchtower:arm64v8-$DH_TAG
+            mikeweyandt/watchtower:$DH_TAG \
+            mikeweyandt/watchtower:amd64-$DH_TAG \
+            mikeweyandt/watchtower:i386-$DH_TAG \
+            mikeweyandt/watchtower:armhf-$DH_TAG \
+            mikeweyandt/watchtower:arm64v8-$DH_TAG
           docker manifest create \
-            ghcr.io/containrrr/watchtower:$DH_TAG \
-            ghcr.io/containrrr/watchtower:amd64-$DH_TAG \
-            ghcr.io/containrrr/watchtower:i386-$DH_TAG \
-            ghcr.io/containrrr/watchtower:armhf-$DH_TAG \
-            ghcr.io/containrrr/watchtower:arm64v8-$DH_TAG
+            ghcr.io/mikeweyandt/watchtower:$DH_TAG \
+            ghcr.io/mikeweyandt/watchtower:amd64-$DH_TAG \
+            ghcr.io/mikeweyandt/watchtower:i386-$DH_TAG \
+            ghcr.io/mikeweyandt/watchtower:armhf-$DH_TAG \
+            ghcr.io/mikeweyandt/watchtower:arm64v8-$DH_TAG
       - name: Annotate manifest for version
         run: |
           for REPO in '' ghcr.io/ ; do
           
           docker manifest annotate \
-            ${REPO}containrrr/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ${REPO}containrrr/watchtower:i386-$(echo $TAG | sed 's/^v*//') \
+            ${REPO}mikeweyandt/watchtower:$(echo $TAG | sed 's/^v*//') \
+            ${REPO}mikeweyandt/watchtower:i386-$(echo $TAG | sed 's/^v*//') \
             --os linux \
             --arch 386
           
           docker manifest annotate \
-            ${REPO}containrrr/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ${REPO}containrrr/watchtower:armhf-$(echo $TAG | sed 's/^v*//') \
+            ${REPO}mikeweyandt/watchtower:$(echo $TAG | sed 's/^v*//') \
+            ${REPO}mikeweyandt/watchtower:armhf-$(echo $TAG | sed 's/^v*//') \
             --os linux \
             --arch arm
       
           docker manifest annotate \
-            ${REPO}containrrr/watchtower:$(echo $TAG | sed 's/^v*//') \
-            ${REPO}containrrr/watchtower:arm64v8-$(echo $TAG | sed 's/^v*//') \
+            ${REPO}mikeweyandt/watchtower:$(echo $TAG | sed 's/^v*//') \
+            ${REPO}mikeweyandt/watchtower:arm64v8-$(echo $TAG | sed 's/^v*//') \
             --os linux \
             --arch arm64 \
             --variant v8
@@ -131,36 +131,36 @@ jobs:
       - name: Create manifest for latest
         run: |
           docker manifest create \
-            containrrr/watchtower:latest \
-            containrrr/watchtower:amd64-latest \
-            containrrr/watchtower:i386-latest \
-            containrrr/watchtower:armhf-latest \
-            containrrr/watchtower:arm64v8-latest
+            mikeweyandt/watchtower:latest \
+            mikeweyandt/watchtower:amd64-latest \
+            mikeweyandt/watchtower:i386-latest \
+            mikeweyandt/watchtower:armhf-latest \
+            mikeweyandt/watchtower:arm64v8-latest
           docker manifest create \
-            ghcr.io/containrrr/watchtower:latest \
-            ghcr.io/containrrr/watchtower:amd64-latest \
-            ghcr.io/containrrr/watchtower:i386-latest \
-            ghcr.io/containrrr/watchtower:armhf-latest \
-            ghcr.io/containrrr/watchtower:arm64v8-latest
+            ghcr.io/mikeweyandt/watchtower:latest \
+            ghcr.io/mikeweyandt/watchtower:amd64-latest \
+            ghcr.io/mikeweyandt/watchtower:i386-latest \
+            ghcr.io/mikeweyandt/watchtower:armhf-latest \
+            ghcr.io/mikeweyandt/watchtower:arm64v8-latest
       - name: Annotate manifest for latest
         run: |
           for REPO in '' ghcr.io/ ; do
 
           docker manifest annotate \
-            ${REPO}containrrr/watchtower:latest \
-            ${REPO}containrrr/watchtower:i386-latest \
+            ${REPO}mikeweyandt/watchtower:latest \
+            ${REPO}mikeweyandt/watchtower:i386-latest \
             --os linux \
             --arch 386
       
           docker manifest annotate \
-            ${REPO}containrrr/watchtower:latest \
-            ${REPO}containrrr/watchtower:armhf-latest \
+            ${REPO}mikeweyandt/watchtower:latest \
+            ${REPO}mikeweyandt/watchtower:armhf-latest \
             --os linux \
             --arch arm
             
           docker manifest annotate \
-            ${REPO}containrrr/watchtower:latest \
-            ${REPO}containrrr/watchtower:arm64v8-latest \
+            ${REPO}mikeweyandt/watchtower:latest \
+            ${REPO}mikeweyandt/watchtower:arm64v8-latest \
             --os linux \
             --arch arm64 \
             --variant v8
@@ -172,16 +172,16 @@ jobs:
           DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           docker login -u $DOCKER_USER -p $DOCKER_TOKEN && \
-            docker manifest push containrrr/watchtower:$(echo $TAG | sed 's/^v*//') && \
-            docker manifest push containrrr/watchtower:latest
+            docker manifest push mikeweyandt/watchtower:$(echo $TAG | sed 's/^v*//') && \
+            docker manifest push mikeweyandt/watchtower:latest
       - name: Push manifests to GitHub Container Registry
         env:
           DOCKER_USER: ${{ secrets.BOT_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.BOT_GHCR_PAT }}
         run: |
           docker login -u $DOCKER_USER -p $DOCKER_TOKEN ghcr.io && \
-            docker manifest push ghcr.io/containrrr/watchtower:$(echo $TAG | sed 's/^v*//') && \
-            docker manifest push ghcr.io/containrrr/watchtower:latest
+            docker manifest push ghcr.io/mikeweyandt/watchtower:$(echo $TAG | sed 's/^v*//') && \
+            docker manifest push ghcr.io/mikeweyandt/watchtower:latest
 
   renew-docs:
     name: Refresh pkg.go.dev
