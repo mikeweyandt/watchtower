@@ -76,28 +76,28 @@ var _ = Describe("the container", func() {
 				}), WithImageHealthcheck(dc.HealthConfig{
 					Test: []string{"/usr/bin/sleep", "1s"},
 				}))
-				Expect(c.GetCreateConfig().Healthcheck).To(Equal(dc.HealthConfig{}))
+				Expect(c.GetCreateConfig().Healthcheck).To(Equal(&dc.HealthConfig{}))
 
 				c = MockContainer(WithHealthcheck(dc.HealthConfig{
 					Timeout: 30,
 				}), WithImageHealthcheck(dc.HealthConfig{
 					Timeout: 30,
 				}))
-				Expect(c.GetCreateConfig().Healthcheck).To(Equal(dc.HealthConfig{}))
+				Expect(c.GetCreateConfig().Healthcheck).To(Equal(&dc.HealthConfig{}))
 
 				c = MockContainer(WithHealthcheck(dc.HealthConfig{
 					StartPeriod: 30,
 				}), WithImageHealthcheck(dc.HealthConfig{
 					StartPeriod: 30,
 				}))
-				Expect(c.GetCreateConfig().Healthcheck).To(Equal(dc.HealthConfig{}))
+				Expect(c.GetCreateConfig().Healthcheck).To(Equal(&dc.HealthConfig{}))
 
 				c = MockContainer(WithHealthcheck(dc.HealthConfig{
 					Retries: 30,
 				}), WithImageHealthcheck(dc.HealthConfig{
 					Retries: 30,
 				}))
-				Expect(c.GetCreateConfig().Healthcheck).To(Equal(dc.HealthConfig{}))
+				Expect(c.GetCreateConfig().Healthcheck).To(Equal(&dc.HealthConfig{}))
 			})
 		})
 		When("container healthcheck config is different to image config", func() {
