@@ -33,8 +33,14 @@ var _ = Describe("the client", func() {
 		// Pin the API version: the SDK otherwise negotiates lazily by issuing a
 		// GET /_ping before the first call, which would consume the next ordered
 		// handler and desync every expectation below.
+		//
+		// Pin the scheme too. When it is not set, the SDK infers it from the
+		// transport's TLS config, and httptest's client reports that differently
+		// across Go releases -- which silently turned these into https requests
+		// against a plain-http mock server on some toolchains.
 		docker, _ = cli.New(
 			cli.WithHost(mockServer.URL()),
+			cli.WithScheme("http"),
 			cli.WithAPIVersion(cli.MaxAPIVersion),
 			cli.WithHTTPClient(mockServer.HTTPTestServer.Client()))
 	})
