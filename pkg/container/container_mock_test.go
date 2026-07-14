@@ -1,9 +1,9 @@
 package container
 
 import (
-	dockerContainer "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/go-connections/nat"
+	dockerContainer "github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/api/types/network"
 	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
 )
 
@@ -11,12 +11,10 @@ type MockContainerUpdate func(*dockerContainer.InspectResponse, *image.InspectRe
 
 func MockContainer(updates ...MockContainerUpdate) *Container {
 	containerInfo := dockerContainer.InspectResponse{
-		ContainerJSONBase: &dockerContainer.ContainerJSONBase{
-			ID:         "container_id",
-			Image:      "image",
-			Name:       "test-containrrr",
-			HostConfig: &dockerContainer.HostConfig{},
-		},
+		ID:         "container_id",
+		Image:      "image",
+		Name:       "test-containrrr",
+		HostConfig: &dockerContainer.HostConfig{},
 		Config: &dockerContainer.Config{
 			Labels: map[string]string{},
 		},
@@ -34,9 +32,9 @@ func MockContainer(updates ...MockContainerUpdate) *Container {
 
 func WithPortBindings(portBindingSources ...string) MockContainerUpdate {
 	return func(cnt *dockerContainer.InspectResponse, img *image.InspectResponse) {
-		portBindings := nat.PortMap{}
+		portBindings := network.PortMap{}
 		for _, pbs := range portBindingSources {
-			portBindings[nat.Port(pbs)] = []nat.PortBinding{}
+			portBindings[network.MustParsePort(pbs)] = []network.PortBinding{}
 		}
 		cnt.HostConfig.PortBindings = portBindings
 	}

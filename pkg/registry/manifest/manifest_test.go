@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	dockerImage "github.com/docker/docker/api/types/image"
+	dockerImage "github.com/moby/moby/api/types/image"
 	"github.com/mikeweyandt/watchtower/internal/actions/mocks"
 	"github.com/mikeweyandt/watchtower/pkg/registry/manifest"
 	. "github.com/onsi/ginkgo"
