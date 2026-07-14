@@ -3,8 +3,8 @@ package container
 import (
 	"time"
 
-	dockerContainer "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/network"
+	dockerContainer "github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/network"
 
 	"github.com/mikeweyandt/watchtower/internal/util"
 	"github.com/mikeweyandt/watchtower/pkg/container/mocks"
@@ -12,8 +12,7 @@ import (
 	t "github.com/mikeweyandt/watchtower/pkg/types"
 
 	cerrdefs "github.com/containerd/errdefs"
-	"github.com/docker/docker/api/types/backend"
-	cli "github.com/docker/docker/client"
+	cli "github.com/moby/moby/client"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/sirupsen/logrus"
@@ -31,8 +30,12 @@ var _ = Describe("the client", func() {
 	var mockServer *ghttp.Server
 	BeforeEach(func() {
 		mockServer = ghttp.NewServer()
-		docker, _ = cli.NewClientWithOpts(
+		// Pin the API version: the SDK otherwise negotiates lazily by issuing a
+		// GET /_ping before the first call, which would consume the next ordered
+		// handler and desync every expectation below.
+		docker, _ = cli.New(
 			cli.WithHost(mockServer.URL()),
+			cli.WithAPIVersion(cli.MaxAPIVersion),
 			cli.WithHTTPClient(mockServer.HTTPTestServer.Client()))
 	})
 	AfterEach(func() {
@@ -268,13 +271,12 @@ var _ = Describe("the client", func() {
 				cmd := "exec-cmd"
 
 				mockServer.AppendHandlers(
-					// API.ContainerExecCreate
+					// API.ExecCreate
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", HaveSuffix("containers/%v/exec", containerID)),
-						ghttp.VerifyJSONRepresenting(dockerContainer.ExecOptions{
-							User:   user,
-							Detach: false,
-							Tty:    true,
+						ghttp.VerifyJSONRepresenting(dockerContainer.ExecCreateRequest{
+							User: user,
+							Tty:  true,
 							Cmd: []string{
 								"sh",
 								"-c",
@@ -283,23 +285,23 @@ var _ = Describe("the client", func() {
 						}),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, dockerContainer.ExecCreateResponse{ID: execID}),
 					),
-					// API.ContainerExecStart
+					// API.ExecStart
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", HaveSuffix("exec/%v/start", execID)),
-						ghttp.VerifyJSONRepresenting(dockerContainer.ExecAttachOptions{
+						ghttp.VerifyJSONRepresenting(dockerContainer.ExecStartRequest{
 							Detach: false,
 							Tty:    true,
 						}),
 						ghttp.RespondWith(http.StatusOK, nil),
 					),
-					// API.ContainerExecInspect
+					// API.ExecInspect
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", HaveSuffix("exec/ex-exec-id/json")),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, backend.ExecInspect{
+						ghttp.RespondWithJSONEncoded(http.StatusOK, dockerContainer.ExecInspectResponse{
 							ID:       execID,
 							Running:  false,
 							ExitCode: nil,
-							ProcessConfig: &backend.ExecProcessConfig{
+							ProcessConfig: &dockerContainer.ExecProcessConfig{
 								Entrypoint: "sh",
 								Arguments:  []string{"-c", cmd},
 								User:       user,

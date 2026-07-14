@@ -4,31 +4,27 @@ import (
 	"context"
 
 	ref "github.com/distribution/reference"
-	"github.com/docker/docker/api/types/image"
 	"github.com/mikeweyandt/watchtower/pkg/registry/helpers"
 	watchtowerTypes "github.com/mikeweyandt/watchtower/pkg/types"
 	log "github.com/sirupsen/logrus"
 )
 
-// GetPullOptions creates a struct with all options needed for pulling images from a registry
-func GetPullOptions(imageName string) (image.PullOptions, error) {
+// GetPullAuth returns the encoded registry credentials to use when pulling the
+// given image, or an empty string when no credentials are configured.
+//
+// The caller turns this into the SDK's pull options, which keeps the Docker
+// client dependency confined to the pkg/container package.
+func GetPullAuth(imageName string) (string, error) {
 	auth, err := EncodedAuth(imageName)
 	log.Debugf("Got image name: %s", imageName)
 	if err != nil {
-		return image.PullOptions{}, err
-	}
-
-	if auth == "" {
-		return image.PullOptions{}, nil
+		return "", err
 	}
 
 	// CREDENTIAL: Uncomment to log docker config auth
 	// log.Tracef("Got auth value: %s", auth)
 
-	return image.PullOptions{
-		RegistryAuth:  auth,
-		PrivilegeFunc: DefaultAuthHandler,
-	}, nil
+	return auth, nil
 }
 
 // DefaultAuthHandler will be invoked if an AuthConfig is rejected
