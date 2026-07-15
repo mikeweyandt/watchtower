@@ -17,6 +17,7 @@ func TestEnvConfig_Defaults(t *testing.T) {
 	// Unset testing environments own variables, since those are not what is under test
 	_ = os.Unsetenv("DOCKER_TLS_VERIFY")
 	_ = os.Unsetenv("DOCKER_HOST")
+	_ = os.Unsetenv("DOCKER_API_VERSION")
 
 	cmd := new(cobra.Command)
 	SetDefaults()
@@ -27,8 +28,9 @@ func TestEnvConfig_Defaults(t *testing.T) {
 
 	assert.Equal(t, "unix:///var/run/docker.sock", os.Getenv("DOCKER_HOST"))
 	assert.Equal(t, "", os.Getenv("DOCKER_TLS_VERIFY"))
-	// Re-enable this test when we've moved to github actions.
-	// assert.Equal(t, DockerAPIMinVersion, os.Getenv("DOCKER_API_VERSION"))
+	// DOCKER_API_VERSION is deliberately left unset so the SDK negotiates the
+	// version with the daemon.
+	assert.Equal(t, "", os.Getenv("DOCKER_API_VERSION"))
 }
 
 func TestEnvConfig_Custom(t *testing.T) {
@@ -44,8 +46,9 @@ func TestEnvConfig_Custom(t *testing.T) {
 
 	assert.Equal(t, "some-custom-docker-host", os.Getenv("DOCKER_HOST"))
 	assert.Equal(t, "1", os.Getenv("DOCKER_TLS_VERIFY"))
-	// Re-enable this test when we've moved to github actions.
-	// assert.Equal(t, "1.99", os.Getenv("DOCKER_API_VERSION"))
+	// An explicit --api-version still pins the version by propagating it to the
+	// env var the SDK reads.
+	assert.Equal(t, "1.99", os.Getenv("DOCKER_API_VERSION"))
 }
 
 func TestGetSecretsFromFilesWithString(t *testing.T) {
