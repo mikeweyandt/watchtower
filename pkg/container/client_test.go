@@ -23,6 +23,7 @@ import (
 
 	"context"
 	"net/http"
+	"os"
 )
 
 var _ = Describe("the client", func() {
@@ -342,6 +343,61 @@ var _ = Describe("the client", func() {
 				Expect(container.ContainerInfo().NetworkSettings.Networks[`test`].Aliases).To(Equal(aliases))
 				Expect(client.GetNetworkConfig(container).EndpointsConfig[`test`].Aliases).To(Equal([]string{"One", "Two", "Four"}))
 			})
+		})
+	})
+})
+
+var _ = Describe("NewClient", func() {
+	var restoreLogrus func()
+	var logbuf *gbytes.Buffer
+	var origExitFunc func(int)
+	var origVersion string
+	var hadVersion bool
+
+	BeforeEach(func() {
+		restoreLogrus, logbuf = captureLogrus(logrus.DebugLevel)
+		origExitFunc = logrus.StandardLogger().ExitFunc
+		origVersion, hadVersion = os.LookupEnv("DOCKER_API_VERSION")
+	})
+	AfterEach(func() {
+		restoreLogrus()
+		logrus.StandardLogger().ExitFunc = origExitFunc
+		if hadVersion {
+			_ = os.Setenv("DOCKER_API_VERSION", origVersion)
+		} else {
+			_ = os.Unsetenv("DOCKER_API_VERSION")
+		}
+	})
+
+	When("a pinned API version below the supported minimum is set", func() {
+		It("aborts startup with an actionable error", func() {
+			exited := false
+			logrus.StandardLogger().ExitFunc = func(int) {
+				exited = true
+				// Abort NewClient the way os.Exit would, so it does not
+				// return past the fatal log.
+				panic("os.Exit called")
+			}
+			// 1.20 is safely below cli.MinAPIVersion (1.40).
+			Expect(os.Setenv("DOCKER_API_VERSION", "1.20")).To(Succeed())
+
+			Expect(func() { NewClient(ClientOptions{}) }).To(Panic())
+			Expect(exited).To(BeTrue())
+			Eventually(logbuf).Should(gbytes.Say("1.20 is not supported"))
+			Eventually(logbuf).Should(gbytes.Say(cli.MinAPIVersion))
+		})
+	})
+
+	When("a pinned API version at or above the supported minimum is set", func() {
+		It("constructs the client without aborting", func() {
+			logrus.StandardLogger().ExitFunc = func(int) {
+				panic("os.Exit should not be called for a supported version")
+			}
+			Expect(os.Setenv("DOCKER_API_VERSION", cli.MinAPIVersion)).To(Succeed())
+
+			var client Client
+			Expect(func() { client = NewClient(ClientOptions{}) }).NotTo(Panic())
+			Expect(client).NotTo(BeNil())
 		})
 	})
 })
