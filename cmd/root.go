@@ -353,6 +353,10 @@ func runUpgradesOnSchedule(c *cobra.Command, filter t.Filter, filtering string, 
 	scheduler.Stop()
 	log.Info("Waiting for running update to be finished...")
 	<-lock
+	// Drain any queued/stray notifications before the process exits. Acquiring the
+	// lock above guarantees no update (scheduler- or HTTP-API-triggered) is still
+	// in flight, so this closes the notifier exactly once.
+	notifier.Close()
 	return nil
 }
 
@@ -369,11 +373,26 @@ func runUpdatesWithNotifications(filter t.Filter) *metrics.Metric {
 		LabelPrecedence: labelPrecedence,
 		NoPull:          noPull,
 	}
-	result, err := actions.Update(client, updateParams)
+	result, deferredSelf, err := actions.Update(client, updateParams)
 	if err != nil {
 		log.Error(err)
 	}
 	notifier.SendNotification(result)
+
+	// Replacing watchtower's own container is deferred until here so the update
+	// notification (which lists watchtower among the updated containers) is
+	// delivered first. Starting the new container causes the new instance to stop
+	// this process via its multiple-instance cleanup, so we flush synchronously
+	// before handing over.
+	if len(deferredSelf) > 0 {
+		notifier.Flush()
+		for _, self := range deferredSelf {
+			if err := actions.RestartSelf(client, self, updateParams); err != nil {
+				log.Error(err)
+			}
+		}
+	}
+
 	metricResults := metrics.NewMetric(result)
 	notifications.LocalLog.WithFields(log.Fields{
 		"Scanned": metricResults.Scanned,

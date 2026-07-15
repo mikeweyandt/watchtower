@@ -70,7 +70,7 @@ var _ = Describe("the update action", func() {
 		When("there are multiple containers using the same image", func() {
 			It("should only try to remove the image once", func() {
 				client := CreateMockClient(getCommonTestData(""), false, false)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
@@ -88,7 +88,7 @@ var _ = Describe("the update action", func() {
 					),
 				)
 				client := CreateMockClient(testData, false, false)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(2))
 			})
@@ -96,7 +96,7 @@ var _ = Describe("the update action", func() {
 		When("there are linked containers being updated", func() {
 			It("should not try to remove their images", func() {
 				client := CreateMockClient(getLinkedTestData(true), false, false)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
@@ -104,7 +104,7 @@ var _ = Describe("the update action", func() {
 		When("performing a rolling restart update", func() {
 			It("should try to remove the image once", func() {
 				client := CreateMockClient(getCommonTestData(""), false, false)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true, RollingRestart: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, RollingRestart: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
@@ -113,7 +113,7 @@ var _ = Describe("the update action", func() {
 			It("should gracefully fail", func() {
 				client := CreateMockClient(getLinkedTestData(false), false, false)
 
-				report, err := actions.Update(client, types.UpdateParams{})
+				report, _, err := actions.Update(client, types.UpdateParams{})
 				Expect(err).NotTo(HaveOccurred())
 				// Note: Linked containers that were skipped for recreation is not counted in Failed
 				// If this happens, an error is emitted to the logs, so a notification should still be sent.
@@ -152,7 +152,7 @@ var _ = Describe("the update action", func() {
 					false,
 					false,
 				)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
@@ -178,7 +178,7 @@ var _ = Describe("the update action", func() {
 					false,
 					false,
 				)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true, MonitorOnly: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, MonitorOnly: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(0))
 			})
@@ -205,7 +205,7 @@ var _ = Describe("the update action", func() {
 						false,
 						false,
 					)
-					_, err := actions.Update(client, types.UpdateParams{Cleanup: true, MonitorOnly: true, LabelPrecedence: true})
+					_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, MonitorOnly: true, LabelPrecedence: true})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 				})
@@ -231,7 +231,7 @@ var _ = Describe("the update action", func() {
 						false,
 						false,
 					)
-					_, err := actions.Update(client, types.UpdateParams{Cleanup: true, MonitorOnly: true, LabelPrecedence: true})
+					_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, MonitorOnly: true, LabelPrecedence: true})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(client.TestData.TriedToRemoveImageCount).To(Equal(0))
 				})
@@ -249,7 +249,7 @@ var _ = Describe("the update action", func() {
 						false,
 						false,
 					)
-					_, err := actions.Update(client, types.UpdateParams{Cleanup: true, MonitorOnly: true, LabelPrecedence: true})
+					_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, MonitorOnly: true, LabelPrecedence: true})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(client.TestData.TriedToRemoveImageCount).To(Equal(0))
 				})
@@ -286,7 +286,7 @@ var _ = Describe("the update action", func() {
 					false,
 				)
 
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(0))
 			})
@@ -318,7 +318,7 @@ var _ = Describe("the update action", func() {
 					false,
 					false,
 				)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(0))
 			})
@@ -350,7 +350,7 @@ var _ = Describe("the update action", func() {
 					false,
 					false,
 				)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
@@ -429,7 +429,7 @@ var _ = Describe("the update action", func() {
 					false,
 					false,
 				)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
@@ -461,12 +461,118 @@ var _ = Describe("the update action", func() {
 					false,
 					false,
 				)
-				_, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
+				_, _, err := actions.Update(client, types.UpdateParams{Cleanup: true, LifecycleHooks: true})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(client.TestData.TriedToRemoveImageCount).To(Equal(1))
 			})
 
 		})
 
+	})
+
+	When("watchtower is updating its own container", func() {
+		getSelfUpdateTestData := func() *TestData {
+			return &TestData{
+				Containers: []types.Container{
+					CreateMockContainer(
+						"test-container-01",
+						"test-container-01",
+						"fake-image:latest",
+						time.Now().AddDate(0, 0, -1)),
+					CreateMockWatchtowerContainer(
+						"watchtower",
+						"watchtower",
+						"watchtower-image:latest",
+						time.Now().AddDate(0, 0, -1)),
+				},
+			}
+		}
+
+		updatedNames := func(report types.Report) []string {
+			names := []string{}
+			for _, c := range report.Updated() {
+				names = append(names, c.Name())
+			}
+			return names
+		}
+
+		It("reports itself as updated but defers the actual replacement", func() {
+			client := CreateMockClient(getSelfUpdateTestData(), false, false)
+			report, deferred, err := actions.Update(client, types.UpdateParams{})
+			Expect(err).NotTo(HaveOccurred())
+
+			// The watchtower is still listed as updated in the report/notification ...
+			Expect(updatedNames(report)).To(ContainElement("watchtower"))
+			// ... but its replacement is deferred, not performed during Update.
+			Expect(deferred).To(HaveLen(1))
+			Expect(deferred[0].Name()).To(Equal("watchtower"))
+			Expect(client.TestData.RenamedContainers).NotTo(ContainElement("watchtower"))
+			Expect(client.TestData.StartedContainers).NotTo(ContainElement("watchtower"))
+			// Other stale containers are still restarted inline.
+			Expect(client.TestData.StartedContainers).To(ContainElement("test-container-01"))
+		})
+
+		It("replaces itself only once RestartSelf is called", func() {
+			client := CreateMockClient(getSelfUpdateTestData(), false, false)
+			_, deferred, err := actions.Update(client, types.UpdateParams{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(deferred).To(HaveLen(1))
+
+			Expect(actions.RestartSelf(client, deferred[0], types.UpdateParams{})).To(Succeed())
+			Expect(client.TestData.RenamedContainers).To(Equal([]string{"watchtower"}))
+			Expect(client.TestData.StartedContainers).To(ContainElement("watchtower"))
+		})
+
+		When("performing a rolling restart update", func() {
+			It("still defers replacing itself", func() {
+				client := CreateMockClient(getSelfUpdateTestData(), false, false)
+				_, deferred, err := actions.Update(client, types.UpdateParams{RollingRestart: true})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(deferred).To(HaveLen(1))
+				Expect(deferred[0].Name()).To(Equal("watchtower"))
+				Expect(client.TestData.RenamedContainers).NotTo(ContainElement("watchtower"))
+				Expect(client.TestData.StartedContainers).NotTo(ContainElement("watchtower"))
+			})
+		})
+
+		When("restarts are disabled", func() {
+			It("does not defer, rename or start itself", func() {
+				client := CreateMockClient(getSelfUpdateTestData(), false, false)
+				_, deferred, err := actions.Update(client, types.UpdateParams{NoRestart: true})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(deferred).To(BeEmpty())
+				Expect(client.TestData.RenamedContainers).To(BeEmpty())
+				Expect(client.TestData.StartedContainers).To(BeEmpty())
+			})
+		})
+
+		When("the watchtower container is monitor only", func() {
+			It("does not defer, rename or start itself", func() {
+				client := CreateMockClient(&TestData{
+					Containers: []types.Container{
+						CreateMockContainerWithConfig(
+							"watchtower",
+							"watchtower",
+							"watchtower-image:latest",
+							true,
+							false,
+							time.Now(),
+							&dockerContainer.Config{
+								Image: "watchtower-image:latest",
+								Labels: map[string]string{
+									"com.centurylinklabs.watchtower":              "true",
+									"com.centurylinklabs.watchtower.monitor-only": "true",
+								},
+								ExposedPorts: network.PortSet{},
+							}),
+					},
+				}, false, false)
+				_, deferred, err := actions.Update(client, types.UpdateParams{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(deferred).To(BeEmpty())
+				Expect(client.TestData.RenamedContainers).To(BeEmpty())
+				Expect(client.TestData.StartedContainers).To(BeEmpty())
+			})
+		})
 	})
 })

@@ -21,6 +21,10 @@ type TestData struct {
 	NameOfContainerToKeep   string
 	Containers              []t.Container
 	Staleness               map[string]bool
+	// StartedContainers records the names of containers passed to StartContainer.
+	StartedContainers []string
+	// RenamedContainers records the names of containers passed to RenameContainer.
+	RenamedContainers []string
 }
 
 // TriedToRemoveImage is a test helper function to check whether RemoveImageByID has been called
@@ -50,13 +54,15 @@ func (client MockClient) StopContainer(c t.Container, _ time.Duration) error {
 	return nil
 }
 
-// StartContainer is a mock method
-func (client MockClient) StartContainer(_ t.Container) (t.ContainerID, error) {
+// StartContainer is a mock method that records the container it was called with
+func (client MockClient) StartContainer(c t.Container) (t.ContainerID, error) {
+	client.TestData.StartedContainers = append(client.TestData.StartedContainers, c.Name())
 	return "", nil
 }
 
-// RenameContainer is a mock method
-func (client MockClient) RenameContainer(_ t.Container, _ string) error {
+// RenameContainer is a mock method that records the container it was called with
+func (client MockClient) RenameContainer(c t.Container, _ string) error {
+	client.TestData.RenamedContainers = append(client.TestData.RenamedContainers, c.Name())
 	return nil
 }
 

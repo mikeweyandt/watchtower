@@ -97,6 +97,18 @@ func CreateMockContainerWithConfig(id string, name string, image string, running
 	)
 }
 
+// CreateMockWatchtowerContainer creates a container substitute carrying the
+// watchtower label, for testing watchtower's self-update behavior. It is
+// considered running so it takes the same code paths as a real self-update.
+func CreateMockWatchtowerContainer(id string, name string, image string, created time.Time) wt.Container {
+	return CreateMockContainerWithConfig(id, name, image, true, false, created, &dockerContainer.Config{
+		Image: image,
+		Labels: map[string]string{
+			"com.centurylinklabs.watchtower": "true",
+		},
+	})
+}
+
 // CreateContainerForProgress creates a container substitute for tracking session/update progress
 func CreateContainerForProgress(index int, idPrefix int, nameFormat string) (wt.Container, wt.ImageID) {
 	indexStr := strconv.Itoa(idPrefix + index)
