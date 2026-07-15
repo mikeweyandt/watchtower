@@ -26,6 +26,15 @@ type router interface {
 	Send(message string, params *types.Params) []error
 }
 
+// queuedMessage is a unit of work on the notifier's send channel. A message with
+// text is delivered via the router; a message carrying only an ack channel is a
+// flush barrier that is closed once the sender has processed it (and therefore
+// every message queued before it), enabling a synchronous Flush.
+type queuedMessage struct {
+	text string
+	ack  chan struct{}
+}
+
 // Implements Notifier, logrus.Hook
 type shoutrrrTypeNotifier struct {
 	Urls           []string
@@ -33,7 +42,7 @@ type shoutrrrTypeNotifier struct {
 	entries        []*log.Entry
 	logLevel       log.Level
 	template       *template.Template
-	messages       chan string
+	messages       chan queuedMessage
 	done           chan bool
 	legacyTemplate bool
 	params         *types.Params
@@ -102,7 +111,7 @@ func createNotifier(urls []string, level log.Level, tplString string, legacy boo
 	return &shoutrrrTypeNotifier{
 		Urls:           urls,
 		Router:         r,
-		messages:       make(chan string, 1),
+		messages:       make(chan queuedMessage, 1),
 		done:           make(chan bool),
 		logLevel:       level,
 		template:       tpl,
@@ -115,18 +124,27 @@ func createNotifier(urls []string, level log.Level, tplString string, legacy boo
 
 func sendNotifications(n *shoutrrrTypeNotifier) {
 	for msg := range n.messages {
-		time.Sleep(n.delay)
-		errs := n.Router.Send(msg, n.params)
+		if msg.text != "" {
+			time.Sleep(n.delay)
+			errs := n.Router.Send(msg.text, n.params)
 
-		for i, err := range errs {
-			if err != nil {
-				scheme := GetScheme(n.Urls[i])
-				// Use fmt so it doesn't trigger another notification.
-				LocalLog.WithFields(log.Fields{
-					"service": scheme,
-					"index":   i,
-				}).WithError(err).Error("Failed to send shoutrrr notification")
+			for i, err := range errs {
+				if err != nil {
+					scheme := GetScheme(n.Urls[i])
+					// Use fmt so it doesn't trigger another notification.
+					LocalLog.WithFields(log.Fields{
+						"service": scheme,
+						"index":   i,
+					}).WithError(err).Error("Failed to send shoutrrr notification")
+				}
 			}
+		}
+
+		// Signal any Flush waiting on this barrier. Because the channel is FIFO
+		// and buffered to a single slot, every message queued before the barrier
+		// has already been sent by the time we reach it.
+		if msg.ack != nil {
+			close(msg.ack)
 		}
 	}
 
@@ -160,7 +178,7 @@ func (n *shoutrrrTypeNotifier) sendEntries(entries []*log.Entry, report t.Report
 		}()
 		return
 	}
-	n.messages <- msg
+	n.messages <- queuedMessage{text: msg}
 }
 
 // StartNotification begins queueing up messages to send them as a batch
@@ -174,6 +192,15 @@ func (n *shoutrrrTypeNotifier) StartNotification() {
 func (n *shoutrrrTypeNotifier) SendNotification(report t.Report) {
 	n.sendEntries(n.entries, report)
 	n.entries = nil
+}
+
+// Flush blocks until all previously queued notifications have been sent, without
+// closing the notifier (unlike Close), so the notifier stays usable afterwards.
+// Returns immediately when the queue is empty.
+func (n *shoutrrrTypeNotifier) Flush() {
+	ack := make(chan struct{})
+	n.messages <- queuedMessage{ack: ack}
+	<-ack
 }
 
 // Close prevents further messages from being queued and waits until all the currently queued up messages have been sent

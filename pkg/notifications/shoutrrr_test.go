@@ -315,6 +315,65 @@ Turns out everything is on fire
 
 			Eventually(blockingRouter.sent).Should(Receive(BeTrue()))
 		})
+
+		It("FlushWaitsForQueuedNotification", func() {
+			shoutrrr, blockingRouter := sendNotificationsWithBlockingRouter(true)
+
+			// Flush must block until the queued message has actually been sent.
+			flushed := make(chan struct{})
+			go func() {
+				shoutrrr.Flush()
+				close(flushed)
+			}()
+			Consistently(flushed).ShouldNot(BeClosed())
+
+			blockingRouter.unlock <- true
+			Eventually(blockingRouter.sent).Should(Receive(BeTrue()))
+			Eventually(flushed).Should(BeClosed())
+		})
+
+		It("FlushLeavesTheNotifierUsable", func() {
+			shoutrrr, blockingRouter := sendNotificationsWithBlockingRouter(true)
+
+			blockingRouter.unlock <- true
+			shoutrrr.Flush()
+			Eventually(blockingRouter.sent).Should(Receive(BeTrue()))
+
+			// Unlike Close, Flush keeps the notifier open for another cycle.
+			shoutrrr.StartNotification()
+			_ = shoutrrr.Fire(&logrus.Entry{Message: "second"})
+			shoutrrr.SendNotification(nil)
+
+			blockingRouter.unlock <- true
+			shoutrrr.Flush()
+			Eventually(blockingRouter.sent).Should(Receive(BeTrue()))
+		})
+
+		It("FlushReturnsImmediatelyWhenIdle", func() {
+			router := &blockingRouter{
+				unlock: make(chan bool, 1),
+				sent:   make(chan bool, 1),
+			}
+			tpl, err := getShoutrrrTemplate("", true)
+			Expect(err).NotTo(HaveOccurred())
+			shoutrrr := &shoutrrrTypeNotifier{
+				template:       tpl,
+				messages:       make(chan queuedMessage, 1),
+				done:           make(chan bool),
+				Router:         router,
+				legacyTemplate: true,
+				params:         &types.Params{},
+			}
+			go sendNotifications(shoutrrr)
+
+			// With nothing queued, Flush must not block waiting on a send.
+			flushed := make(chan struct{})
+			go func() {
+				shoutrrr.Flush()
+				close(flushed)
+			}()
+			Eventually(flushed).Should(BeClosed())
+		})
 	})
 })
 
@@ -341,7 +400,7 @@ func sendNotificationsWithBlockingRouter(legacy bool) (*shoutrrrTypeNotifier, *b
 
 	shoutrrr := &shoutrrrTypeNotifier{
 		template:       tpl,
-		messages:       make(chan string, 1),
+		messages:       make(chan queuedMessage, 1),
 		done:           make(chan bool),
 		Router:         router,
 		legacyTemplate: legacy,

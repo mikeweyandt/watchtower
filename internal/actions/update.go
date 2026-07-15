@@ -16,7 +16,7 @@ import (
 // used to start those containers have been updated. If a change is detected in
 // any of the images, the associated containers are stopped and restarted with
 // the new image.
-func Update(client container.Client, params types.UpdateParams) (types.Report, error) {
+func Update(client container.Client, params types.UpdateParams) (types.Report, []types.Container, error) {
 	log.Debug("Checking containers for updated images")
 	progress := &session.Progress{}
 	staleCount := 0
@@ -27,7 +27,7 @@ func Update(client container.Client, params types.UpdateParams) (types.Report, e
 
 	containers, err := client.ListContainers(params.Filter)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	staleCheckFailed := 0
@@ -66,7 +66,7 @@ func Update(client container.Client, params types.UpdateParams) (types.Report, e
 
 	containers, err = sorter.SortByDependencies(containers)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	UpdateImplicitRestart(containers)
@@ -79,27 +79,44 @@ func Update(client container.Client, params types.UpdateParams) (types.Report, e
 		}
 	}
 
+	// deferredSelf collects watchtower's own container(s), whose replacement is
+	// postponed until after the update notification has been flushed (see
+	// RestartSelf). Starting the new container triggers the new instance to stop
+	// this process, so it must happen last.
+	var deferredSelf []types.Container
 	if params.RollingRestart {
-		progress.UpdateFailed(performRollingRestart(containersToUpdate, client, params))
+		failed, deferred := performRollingRestart(containersToUpdate, client, params)
+		progress.UpdateFailed(failed)
+		deferredSelf = deferred
 	} else {
 		failedStop, stoppedImages := stopContainersInReversedOrder(containersToUpdate, client, params)
 		progress.UpdateFailed(failedStop)
-		failedStart := restartContainersInSortedOrder(containersToUpdate, client, params, stoppedImages)
+		failedStart, deferred := restartContainersInSortedOrder(containersToUpdate, client, params, stoppedImages)
 		progress.UpdateFailed(failedStart)
+		deferredSelf = deferred
 	}
 
 	if params.LifecycleHooks {
 		lifecycle.ExecutePostChecks(client, params)
 	}
-	return progress.Report(), nil
+	return progress.Report(), deferredSelf, nil
 }
 
-func performRollingRestart(containers []types.Container, client container.Client, params types.UpdateParams) map[types.ContainerID]error {
+func performRollingRestart(containers []types.Container, client container.Client, params types.UpdateParams) (map[types.ContainerID]error, []types.Container) {
 	cleanupImageIDs := make(map[types.ImageID]bool, len(containers))
 	failed := make(map[types.ContainerID]error, len(containers))
+	var deferredSelf []types.Container
 
 	for i := len(containers) - 1; i >= 0; i-- {
 		if containers[i].ToRestart() {
+			// Defer replacing watchtower's own container until after the
+			// notification has been flushed (see restartContainersInSortedOrder).
+			if containers[i].IsWatchtower() {
+				if !params.NoRestart {
+					deferredSelf = append(deferredSelf, containers[i])
+				}
+				continue
+			}
 			err := stopStaleContainer(containers[i], client, params)
 			if err != nil {
 				failed[containers[i].ID()] = err
@@ -117,7 +134,7 @@ func performRollingRestart(containers []types.Container, client container.Client
 	if params.Cleanup {
 		cleanupImages(client, cleanupImageIDs)
 	}
-	return failed
+	return failed, deferredSelf
 }
 
 func stopContainersInReversedOrder(containers []types.Container, client container.Client, params types.UpdateParams) (failed map[types.ContainerID]error, stopped map[types.ImageID]bool) {
@@ -172,12 +189,22 @@ func stopStaleContainer(container types.Container, client container.Client, para
 	return nil
 }
 
-func restartContainersInSortedOrder(containers []types.Container, client container.Client, params types.UpdateParams, stoppedImages map[types.ImageID]bool) map[types.ContainerID]error {
+func restartContainersInSortedOrder(containers []types.Container, client container.Client, params types.UpdateParams, stoppedImages map[types.ImageID]bool) (map[types.ContainerID]error, []types.Container) {
 	cleanupImageIDs := make(map[types.ImageID]bool, len(containers))
 	failed := make(map[types.ContainerID]error, len(containers))
+	var deferredSelf []types.Container
 
 	for _, c := range containers {
 		if !c.ToRestart() {
+			continue
+		}
+		// Defer replacing watchtower's own container until after the update
+		// notification has been flushed, because starting the new container
+		// causes the new instance to stop this process.
+		if c.IsWatchtower() {
+			if !params.NoRestart {
+				deferredSelf = append(deferredSelf, c)
+			}
 			continue
 		}
 		if stoppedImages[c.SafeImageID()] {
@@ -194,7 +221,7 @@ func restartContainersInSortedOrder(containers []types.Container, client contain
 		cleanupImages(client, cleanupImageIDs)
 	}
 
-	return failed
+	return failed, deferredSelf
 }
 
 func cleanupImages(client container.Client, imageIDs map[types.ImageID]bool) {
@@ -229,6 +256,15 @@ func restartStaleContainer(container types.Container, client container.Client, p
 		}
 	}
 	return nil
+}
+
+// RestartSelf performs the deferred replacement of watchtower's own container.
+// It must be called only AFTER the update notification has been flushed, because
+// starting the new container causes the new instance to stop this process via its
+// multiple-instance cleanup. The container is renamed and a replacement is started
+// from the new image, exactly as restartStaleContainer would have done inline.
+func RestartSelf(client container.Client, self types.Container, params types.UpdateParams) error {
+	return restartStaleContainer(self, client, params)
 }
 
 // UpdateImplicitRestart iterates through the passed containers, setting the
