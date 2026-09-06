@@ -22,7 +22,7 @@ jobs:
           go-version: 1.25.x
       - uses: dominikh/staticcheck-action@v1
         with:
-          version: "latest"
+          version: "v0.7.0" # v0.8.x requires Go 1.26; bump alongside the Go toolchain
           install-go: "false" # StaticCheck uses go v1.17 which does not support `any`
 
   test:
