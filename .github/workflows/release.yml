@@ -19,18 +19,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: 1.25.x
+          go-version: 1.26.x
       - uses: dominikh/staticcheck-action@v1
         with:
-          version: "v0.7.0" # v0.8.x requires Go 1.26; bump alongside the Go toolchain
+          version: "latest"
           install-go: "false" # StaticCheck uses go v1.17 which does not support `any`
 
   test:
-    name: Test
+    name: Test (${{ matrix.platform }})
     strategy:
       matrix:
         go-version:
-          - 1.25.x
+          - 1.26.x
         platform:
           - ubuntu-latest
           - macos-latest
@@ -44,7 +44,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: 1.25.x
+          go-version: 1.26.x
       - name: Run tests
         run: |
           go test ./... -coverprofile coverage.out
@@ -66,7 +66,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version: 1.25.x
+          go-version: 1.26.x
       - name: Login to Docker Hub
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f #v4.6.0
         with:
