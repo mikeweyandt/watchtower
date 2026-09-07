@@ -123,4 +123,27 @@ var _ = Describe("Digests", func() {
 			Expect(dig).To(Equal(mockDigest))
 		})
 	})
+	When("the registry presents an untrusted certificate", func() {
+		var server *ghttp.Server
+		BeforeEach(func() {
+			// ghttp.NewTLSServer serves a self-signed certificate that no client trusts.
+			server = ghttp.NewTLSServer()
+		})
+		AfterEach(func() {
+			server.Close()
+		})
+		It("should refuse to fetch the digest", func() {
+			server.AppendHandlers(
+				ghttp.RespondWith(http.StatusOK, "", http.Header{
+					digest.ContentDigestHeader: []string{
+						mockDigest,
+					},
+				}),
+			)
+			_, err := digest.GetDigest(server.URL(), "token")
+			Expect(err).To(MatchError(ContainSubstring("x509")))
+			// The TLS handshake fails before any request reaches the handler.
+			Expect(server.ReceivedRequests()).To(BeEmpty())
+		})
+	})
 })
